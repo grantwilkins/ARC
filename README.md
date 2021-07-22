@@ -9,8 +9,8 @@ Upon completing this training period ARC is ready to use and only requires minor
 Before using ARC, some modifications to the source must be made:
 In arc.c, 
 ```c
-line 34: char *resource_location = "/home/dakotaf/ARC/src/res/";
-line 36: char *cache_resource_location = "/home/dakotaf/ARC/src/res/cache/";
+line 52: char *resource_location = "/home/dakotaf/ARC/src/res/";
+line 54: char *cache_resource_location = "/home/dakotaf/ARC/src/res/cache/";
 ```
 Both of the above lines must be changed to the correct full path of ARC's resource folder and training cache folder. Upon making these simple changes, ARC is ready to be compiled and used.
 
@@ -43,19 +43,27 @@ int main(){
   // If throughput is not a concern
   double throughput_constraint = ARC_ANY_BW;
   
+  // Specify level of resiliency 
+  // In this case, only use ECC capable of detecting or correcting sparse errors
+  int num_choices = 2;
+  int ecc_choices = [ARC_DET_SPARSE, ARC_COR_SPARSE];
+  // If resiliency is not a concern
+  int num_choices = 1;
+  int ecc_choices = [ARC_ANY_ECC];
+  
   // Set encoding output variables
   int err;
-  uint8_t* arc_joint_encoded;
-  uint32_t arc_joint_encoded_size;
+  uint8_t* arc_encoded;
+  uint32_t arc_encoded_size;
   // Encode data with ARC
-  err = arc_encode(data, data_size, memory_constraint, throughput_constraint, &arc_joint_encoded, &arc_joint_encoded_size);
+  err = arc_encode(data, data_size, memory_constraint, throughput_constraint, ecc_choices, num_choices, &arc_encoded, &arc_encoded_size);
   
   // Set decoding output variables
-  uint8_t* arc_joint_decoded;
-  uint32_t arc_joint_decoded_size;
+  uint8_t* arc_decoded;
+  uint32_t arc_decoded_size;
   
   // Decode data with ARC
-  err = arc_decode(arc_joint_encoded, arc_joint_encoded_size, &arc_joint_decoded, &arc_joint_decoded_size); 
+  err = arc_decode(arc_encoded, arc_encoded_size, &arc_decoded, &arc_decoded_size);
   
   // Save optimization data aquired through standard ARC use
   arc_save();
