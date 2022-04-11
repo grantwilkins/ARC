@@ -49,9 +49,9 @@ int RS_ID = 4;
 // Resource Variables Section
 // ###########################
 // Resource Folder Location
-char *resource_location = "/home/dakotaf/ARC/src/res/";
+char *resource_location = "/users/gfwilki/ARC/src/res/";
 // Cache Resource Folder Location
-char *cache_resource_location = "/home/dakotaf/ARC/src/res/cache/";
+char *cache_resource_location = "/users/gfwilki/ARC/src/res/cache/";
 // Set configuration information cache string
 char *thread_resource_file = "_information_cache.csv";
 // Hamming & SECDED Resource Variables 

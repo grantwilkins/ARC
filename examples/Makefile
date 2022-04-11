@@ -6,31 +6,32 @@
 
 ##  COMPILER 
 CC	= gcc
+SPACK_PATH = /users/gfwilki/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.3.0/
 
 ## Libpressio flags
-LIBPRESSIO_INCLUDE_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/libpressio-0.38.1-6bphbkmsnbfp4zxvgxn3a6al6cmmk4jl
-LIBPRESSIO_SO_PATH_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/libpressio-0.38.1-6bphbkmsnbfp4zxvgxn3a6al6cmmk4jl/lib64
+LIBPRESSIO_INCLUDE = $(SPACK_PATH)/libpressio-0.83.4-c3de63wiqefktoamucy5hghxqbehwxv7
+LIBPRESSIO_SO_PATH = $(LIBPRESSIO_INCLUDE)/lib
 ## SZ flags
-SZ_INCLUDE_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/sz-2.1.8.1-hnjxctv4winw52xm2eeyucatpizag4cl
-SZ_SO_PATH_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/sz-2.1.8.1-hnjxctv4winw52xm2eeyucatpizag4cl/lib64 
+SZ_INCLUDE = $(SPACK_PATH)/sz-2.1.12.2-eew3zqu737agxasr7nsmtohbtmoiibc6
+SZ_SO_PATH = $(SZ_INCLUDE)/lib
 ## ZFP flags
-ZFP_INCLUDE_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/zfp-0.5.5-dycqslvmlpomptwjg52nt4zeoiqtcmun
-ZFP_SO_PATH_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/zfp-0.5.5-dycqslvmlpomptwjg52nt4zeoiqtcmun/lib64
+ZFP_INCLUDE = $(SPACK_PATH)/zfp-0.5.5-7uj3xzy2d5z72htec5gdq7pct2r7elen
+ZFP_SO_PATH = $(ZFP_INCLUDE)/lib
 ## FPZIP flags
-FPZIP_INCLUDE_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/fpzip-1.3.0-hzhhfannwjcokyjokrs4q7oojxphwya6
-FPZIP_SO_PATH_ol7_sandybridge = /zfs/ftdice/spack/opt/spack/linux-ol7-sandybridge/gcc-8.2.0/fpzip-1.3.0-hzhhfannwjcokyjokrs4q7oojxphwya6/lib64
+FPZIP_INCLUDE = $(SPACK_PATH)/fpzip-1.3.0-z3vy5wjgngyrm63zmt656akhyrc354zp
+FPZIP_SO_PATH = $(FPZIP_INCLUDE)/lib
 ## ARC flags
-ARC_INCLUDE = /home/dakotaf/ARC/include
-ARC_SO_PATH = /home/dakotaf/ARC/lib64
+ARC_INCLUDE = /users/gfwilki/ARC/include
+ARC_SO_PATH = /users/gfwilki/ARC/lib64
 
 ## Compilation Includes
-FLAGS_ol7_sandybridge = -I $(LIBPRESSIO_INCLUDE_ol7_sandybridge)/include/libpressio -I $(SZ_INCLUDE_ol7_sandybridge)/include/sz -I $(ZFP_INCLUDE_ol7_sandybridge)/include -I $(FPZIP_INCLUDE_ol7_sandybridge)/include -I $(ARC_INCLUDE) -L $(LIBPRESSIO_SO_PATH_ol7_sandybridge) -L $(SZ_SO_PATH_ol7_sandybridge) -L $(ZFP_SO_PATH_ol7_sandybridge) -L $(FPZIP_SO_PATH_ol7_sandybridge) -L $(ARC_SO_PATH) -llibpressio -lSZ -lzfp -lfpzip -larc -lm
+FLAGS = -I $(LIBPRESSIO_INCLUDE)/include/libpressio -I $(SZ_INCLUDE)/include/sz -I $(ZFP_INCLUDE)/include -I $(FPZIP_INCLUDE)/include -I $(ARC_INCLUDE) -L $(LIBPRESSIO_SO_PATH) -L $(SZ_SO_PATH) -L $(ZFP_SO_PATH) -L $(FPZIP_SO_PATH) -L $(ARC_SO_PATH) -llibpressio -lSZ -lzfp -lfpzip -larc -lm
 
 ## TARGETS
 all: arc_pressio_example
 
 arc_pressio_example:	arc_pressio_example.c 
-	$(CC) -Wall -g -rdynamic -o arc_pressio_example arc_pressio_example.c $(FLAGS_ol7_sandybridge)
+	$(CC) -Wall -g -rdynamic -o arc_pressio_example arc_pressio_example.c $(FLAGS)
 clean:
 	rm arc_pressio_example
 
