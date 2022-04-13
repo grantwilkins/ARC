@@ -8,6 +8,7 @@
 #include <execinfo.h>
 // ARC Libraries
 #include "arc.h"
+#include<omp.h>
 
 // Libpressio Libraries
 #include "libpressio.h"
@@ -18,21 +19,27 @@ float *DATA;
 // Faulted Decompressed Data Pointer
 float *RET_DATA;
 
+/*
+ARGV[1] := path/to/data
+ARGV[2] := error bound
+ARGV[3] := number of cores
+*/
+
 int main(int argc, char* argv[]) {
     // Declare dataset file and dimensions to compress with libPressio
-    char *data_path = "./data/CLDLOW_1_3600_1800.f32";
-    size_t dims[] = { 6480000 };
+    char *data_path = argv[1];
+    size_t dims[] = {512 ,512, 512};
 
     // Read in data from file
     printf("Reading Data From File\n");
 	FILE *fp;
-	DATA= malloc(sizeof(float) * dims[0]);
+	DATA= malloc(sizeof(float) * dims[2] * dims[1] *  dims[0]);
 	fp = fopen(data_path,"rb");
 	if (fp == NULL){
 		perror("ERROR: ");
 		exit(-1);
 	} else {
-		fread(DATA, 4,  dims[0], fp);
+		fread(DATA, 4,  dims[2] * dims[1] * dims[0], fp);
 		fclose(fp);
 	}
 
@@ -55,7 +62,7 @@ int main(int argc, char* argv[]) {
     // pressio_options_set_integer(sz_options, "sz:error_bound_mode", PW_REL);
     // pressio_options_set_integer(sz_options, "sz:error_bound_mode", PSNR);
     // Set error bound
-    pressio_options_set_double(sz_options, "sz:abs_err_bound", 0.1);
+    pressio_options_set_double(sz_options, "sz:abs_err_bound", atof(argv[2]));
 
     // Check and set options
     if (pressio_compressor_check_options(compressor, sz_options)) {
@@ -69,21 +76,26 @@ int main(int argc, char* argv[]) {
 
     // Create libPressio data structures
     printf("Creating Data Structures\n");
-    struct pressio_data* input_data = pressio_data_new_move(pressio_float_dtype, DATA, 1, dims, pressio_data_libc_free_fn, NULL);
+    struct pressio_data* input_data = pressio_data_new_move(pressio_float_dtype, DATA, 3, dims, pressio_data_libc_free_fn, NULL);
     // creates an output dataset pointer
     struct pressio_data* compressed_data = pressio_data_new_empty(pressio_byte_dtype, 0, NULL);
     // configure the decompressed output area
-    struct pressio_data* decompressed_data = pressio_data_new_empty(pressio_float_dtype, 1, dims);
+    struct pressio_data* decompressed_data = pressio_data_new_empty(pressio_float_dtype, 3, dims);
 
+    double compress_time_taken = 0.0; 
     // Compress data 
     printf("Compressing Data\n");
-    if (pressio_compressor_compress(compressor, input_data, compressed_data)) {
+    gettimeofday(&start, NULL)
+    if (pressio_compressor_compress(compressor, input_data, compressed_data)) 
+    {
         printf("%s\n", pressio_compressor_error_msg(compressor));
         exit(pressio_compressor_error_code(compressor));
     }
-
+    gettimeofday(&stop, NULL);
+    compress_time_taken = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
+    printf("Compress Time Taken: %lf\n", compress_time_taken);
     // Utilize ARC library
-    arc_init_w_timing(1);
+    arc_init(atoi(argv[3]));
 
     // Get a pointer to uint8_t data from libPressio
     size_t compressed_size;
@@ -94,12 +106,13 @@ int main(int argc, char* argv[]) {
     struct timeval start, stop;
     double encode_time_taken;
     double decode_time_taken;
-    double memory_constraint = atof(argv[1]);
-    double time_constraint = atof(argv[2]);
+    double memory_constraint = ARC_ANY_SIZE;
+    double time_constraint = ARC_ANY_BW;
     uint8_t * arc_encoded_data;
     uint32_t arc_encoded_data_size;
+    int resiliency_constraint[] = {ARC_PARITY};
     gettimeofday(&start, NULL);
-    ret = arc_encode(data, (uint32_t)compressed_size, memory_constraint, time_constraint, &arc_encoded_data, &arc_encoded_data_size);
+    ret = arc_encode(data, (uint32_t)compressed_size, memory_constraint, time_constraint, resiliency_constraint, 1, &arc_encoded_data, &arc_encoded_data_size);
     gettimeofday(&stop, NULL);
     encode_time_taken = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
     if (ret == 0){
@@ -116,10 +129,10 @@ int main(int argc, char* argv[]) {
     if (ret == 0){
         printf("Error Found In ARC...\nExiting...\n");
     }
-    printf("Memory Constraint: %lf\n", memory_constraint);
-    printf("Time Constraint: %lf\n", time_constraint);
-    printf("Original Data Size: %"PRIu32"\n", (uint32_t)compressed_size);
-    printf("Encoded Data Size: %"PRIu32"\n", arc_encoded_data_size);
+    // printf("Memory Constraint: %lf\n", memory_constraint);
+    // printf("Time Constraint: %lf\n", time_constraint);
+    // printf("Original Data Size: %"PRIu32"\n", (uint32_t)compressed_size);
+    // printf("Encoded Data Size: %"PRIu32"\n", arc_encoded_data_size);
     printf("Encode Time Taken: %lf\n", encode_time_taken);
     printf("Decode Time Taken: %lf\n", decode_time_taken);
 
@@ -133,13 +146,18 @@ int main(int argc, char* argv[]) {
     }
     struct pressio_data* pressio_decoded_data = pressio_data_new_move(pressio_data_dtype(compressed_data), (void*)arc_decoded_data, pressio_data_num_dimensions(compressed_data), decoded_dims, pressio_data_libc_free_fn, NULL);
 
+
+    double decompress_time_taken = 0.0; 
     // Decompress decoded data 
     printf("Decompressing Data\n");
+    gettimeofday(&start, NULL)
     if (pressio_compressor_decompress(compressor, pressio_decoded_data, decompressed_data)) {
         printf("%s\n", pressio_compressor_error_msg(compressor));
         exit(pressio_compressor_error_code(compressor));
     }
-
+    gettimeofday(&stop, NULL);
+    decompress_time_taken = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
+    printf("Decompress Time Taken: %lf\n", decompress_time_taken);
     // Copy decompressed data to result array
     size_t out_bytes;
     RET_DATA = (float *)pressio_data_copy(decompressed_data, &out_bytes);

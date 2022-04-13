@@ -6,19 +6,19 @@
 
 ##  COMPILER 
 CC	= gcc
-SPACK_PATH = /users/gfwilki/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.3.0/
+SPACK_PATH = /users/gfwilki/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0
 
 ## Libpressio flags
-LIBPRESSIO_INCLUDE = $(SPACK_PATH)/libpressio-0.83.4-c3de63wiqefktoamucy5hghxqbehwxv7
-LIBPRESSIO_SO_PATH = $(LIBPRESSIO_INCLUDE)/lib
+LIBPRESSIO_INCLUDE = $(SPACK_PATH)/libpressio-0.83.4-myllqo33wyo2slaqw7kdyk5spzlklvbh
+LIBPRESSIO_SO_PATH = /users/gfwilki/spack/opt/spack/linux-ubuntu20.04-zen2/gcc-9.4.0/libpressio-0.83.4-myllqo33wyo2slaqw7kdyk5spzlklvbh/lib
 ## SZ flags
-SZ_INCLUDE = $(SPACK_PATH)/sz-2.1.12.2-eew3zqu737agxasr7nsmtohbtmoiibc6
+SZ_INCLUDE = $(SPACK_PATH)/sz-2.1.12.2-a5es2iuio2elattsmlttnwr4px5aoayt
 SZ_SO_PATH = $(SZ_INCLUDE)/lib
 ## ZFP flags
-ZFP_INCLUDE = $(SPACK_PATH)/zfp-0.5.5-7uj3xzy2d5z72htec5gdq7pct2r7elen
+ZFP_INCLUDE = $(SPACK_PATH)/zfp-0.5.5-5g3xvdcfctqxgmzfhmwflat46le2fvcp
 ZFP_SO_PATH = $(ZFP_INCLUDE)/lib
 ## FPZIP flags
-FPZIP_INCLUDE = $(SPACK_PATH)/fpzip-1.3.0-z3vy5wjgngyrm63zmt656akhyrc354zp
+FPZIP_INCLUDE = $(SPACK_PATH)/fpzip-1.3.0-xkizpunmxhjqkmbthre627nzoyuszlhu
 FPZIP_SO_PATH = $(FPZIP_INCLUDE)/lib
 ## ARC flags
 ARC_INCLUDE = /users/gfwilki/ARC/include
@@ -31,7 +31,7 @@ FLAGS = -I $(LIBPRESSIO_INCLUDE)/include/libpressio -I $(SZ_INCLUDE)/include/sz 
 all: arc_pressio_example
 
 arc_pressio_example:	arc_pressio_example.c 
-	$(CC) -Wall -g -rdynamic -o arc_pressio_example arc_pressio_example.c $(FLAGS)
+	$(CC) -Wall -g -fopenmp -rdynamic -o arc_pressio_example arc_pressio_example.c $(FLAGS)
 clean:
 	rm arc_pressio_example
 
