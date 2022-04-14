@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     // Declare dataset file and dimensions to compress with libPressio
     char *data_path = argv[1];
     size_t dims[] = {512 ,512, 512};
-
+    struct timeval start, stop;
     // Read in data from file
     printf("Reading Data From File\n");
 	FILE *fp;
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     double compress_time_taken = 0.0; 
     // Compress data 
     printf("Compressing Data\n");
-    gettimeofday(&start, NULL)
+    gettimeofday(&start, NULL);
     if (pressio_compressor_compress(compressor, input_data, compressed_data)) 
     {
         printf("%s\n", pressio_compressor_error_msg(compressor));
@@ -103,7 +103,6 @@ int main(int argc, char* argv[]) {
 
     // Encode data using ARC 
     int ret;
-    struct timeval start, stop;
     double encode_time_taken;
     double decode_time_taken;
     double memory_constraint = ARC_ANY_SIZE;
@@ -150,7 +149,7 @@ int main(int argc, char* argv[]) {
     double decompress_time_taken = 0.0; 
     // Decompress decoded data 
     printf("Decompressing Data\n");
-    gettimeofday(&start, NULL)
+    gettimeofday(&start, NULL);
     if (pressio_compressor_decompress(compressor, pressio_decoded_data, decompressed_data)) {
         printf("%s\n", pressio_compressor_error_msg(compressor));
         exit(pressio_compressor_error_code(compressor));
