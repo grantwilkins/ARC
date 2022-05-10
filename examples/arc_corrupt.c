@@ -14,10 +14,6 @@
 #include "libpressio.h"
 #include "sz.h"
 
-
-// FLIP THIS TO DO ERROR INJECTION
-int INJECT = 0;
-
 // Initial Data Pointer
 float *DATA;
 // Faulted Decompressed Data Pointer
@@ -28,22 +24,11 @@ ARGV[1] := path/to/data
 ARGV[2] := error bound
 ARGV[3] := number of cores
 ARGV[4] := ECC
-ARGV[5] := flip in bit location
-ARGV[6] := byte to flip location
-
-example run on palmetto:
-./arc_pressio_example /zfs/fthpc/common/sdrbench/nyx/baryon_density.dat 0.001 24 2 1 1
--- This would run ARC encode/decode with 1e-3 error bound, on 24 threads, using hamming ECC
 */
 
 int main(int argc, char* argv[]) {
     // Declare dataset file and dimensions to compress with libPressio
     char *data_path = argv[1];
-    double error_bound = atof(argv[2]);
-    int number_threads = atoi(argv[3]);
-    int ecc_selection = atoi(argv[4]);
-    int flip_loc = atoi(argv[5]);
-    int char_loc = atoi(argv[6]);
     //size_t dims[] = {1073726487};
     size_t dims[] = {512, 512, 512};
     //size_t dims[] = {500, 500, 100};
@@ -63,36 +48,31 @@ int main(int argc, char* argv[]) {
 		perror("ERROR: ");
 		exit(-1);
 	} else {
-		fread(DATA, 1, data_size, fp);
+		fread(DATA, 4, data_size, fp);
 		fclose(fp);
 	}
 
     // Set ECC
     int resiliency_constraint[1];
-    if(ecc_selection == 1)
-    {
-        resiliency_constraint[0] = -1;
-        printf("Parity,");
-    }
-    else if(ecc_selection == 2)
-    {
-        resiliency_constraint[0] = -2;
-        printf("Hamming,");
-    }
-    else if(ecc_selection == 3)
-    {
-        resiliency_constraint[0] = -3;
-        printf("SEC-DED,");
-    }
-    else if(ecc_selection == 4)
+    if(atoi(argv[4]) == 1)
     { 
         resiliency_constraint[0] = -4;
         printf("Reed-Solomon,");
     }
+    else if(atoi(argv[4]) == 2)
+    {
+        resiliency_constraint[0] = -3;
+        printf("SEC-DED,");
+    }
+    else if(atoi(argv[4]) == 3)
+    {
+        resiliency_constraint[0] = -1;
+        printf("Parity,");
+    }
     else
     {
-        printf("UNSUPPORTED ECC INPUT\n");
-        exit(-1);
+        resiliency_constraint[0] = -2;
+        printf("Hamming,");
     }
 
 
@@ -116,6 +96,7 @@ int main(int argc, char* argv[]) {
     // pressio_options_set_integer(sz_options, "sz:error_bound_mode", PW_REL);
     // pressio_options_set_integer(sz_options, "sz:error_bound_mode", PSNR);
     // Set error bound
+    double error_bound = atof(argv[2]);
     pressio_options_set_double(sz_options, "sz:abs_err_bound", error_bound);
 
     // Check and set options
@@ -149,6 +130,7 @@ int main(int argc, char* argv[]) {
     compress_time_taken = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
     
     // Utilize ARC library
+    int number_threads = atoi(argv[3]);
     arc_init(number_threads);
 
     // Get a pointer to uint8_t data from libPressio
@@ -169,11 +151,6 @@ int main(int argc, char* argv[]) {
     encode_time_taken = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
     if (ret == 0){
         printf("Error Found In ARC...\nExiting...\n");
-    }
-
-    if(INJECT)
-    {
-        arc_encoded_data[char_loc] = arc_encoded_data[char_loc] ^ ((((uint8_t) 0x1 << flip_loc)));
     }
 
     // Decode data using ARC
@@ -225,83 +202,10 @@ int main(int argc, char* argv[]) {
         printf("failed to get compression ratio\n");
         exit(1);
     }
-    double encode_bandwidth = data_size / (1e6*(encode_time_taken));
-    double decode_bandwidth = data_size / (1e6*(decode_time_taken));
-
-    int number_of_incorrect = 0;
-    double max_diff = 0;
-    double rmse_sum = 0;
-    float max_val = -1;
-    float min_val = -1;
-
-    for (i = 0; i < data_size/sizeof(float); i++)
-    {
-        float a = DATA[i];
-        float b = RET_DATA[i];
-
-        // RMSE Work
-        double rmse_diff = a - b;
-        rmse_diff = rmse_diff * rmse_diff;
-        rmse_sum = rmse_sum + rmse_diff;
-        
-        //PSNR Work
-        if(a > max_val || max_val == -1){
-            max_val = a;
-        }
-        if(a < min_val || min_val == -1){
-            min_val = a;
-        }
-
-        double diff = fabs(a - b);
-        if(diff > error_bound){
-            number_of_incorrect++;
-        }
-        if(diff > max_diff){
-            max_diff = diff;
-        }
-    }
-
-    //Calculate Root Mean Square Error 
-    double rmse = rmse_sum / ((data_size/sizeof(float)) - 1);
-    rmse = sqrt(rmse);
-
-    //Check RMSE for bad values
-    if (fpclassify(rmse) == FP_INFINITE) {
-        rmse = FLT_MAX;
-    } else if (fpclassify(rmse) == FP_NAN) {
-        rmse = FLT_MAX;
-    }
-
-    //Calculate PSNR
-    double psnr_control_value = 10000;
-    double psnr = 0;
-    if (rmse == 0){
-        psnr = psnr_control_value;
-    } else {
-        psnr = 20 * log10((max_val - min_val) / rmse);  
-    }   
-
-    //Check PSNR for bad values
-    if (fpclassify(psnr) == FP_INFINITE){
-        psnr = psnr_control_value * -1;
-    } else if (fpclassify(psnr) == FP_NAN) {
-        psnr = psnr_control_value * -1;
-    }
-    
-    //Check Maximum Difference for bad values
-    if (fpclassify(max_diff) == FP_INFINITE){
-        max_diff = FLT_MAX;
-    } else if (fpclassify(max_diff) == FP_NAN) {
-        max_diff = FLT_MAX;
-    }
+    double encode_bandwidth = data_size / (1e6*(encode_time_taken + compress_time_taken));
+    double decode_bandwidth = data_size / (1e6*(decode_time_taken + decompress_time_taken));
 
     /*
-    //Print Metrics
-    printf("Number of Incorrect: %d\n", number_of_incorrect);
-    printf("Maximum Absolute Difference: %lf\n", max_diff);
-    printf("Root Mean Squared Error: %lf\n", rmse);
-    printf("PSNR: %lf\n", psnr);
-    
     printf("Error Bound: %lf\n", error_bound);
     printf("Number of Threads: %d\n", number_threads);
     printf("Encode Time Taken: %lf\n", encode_time_taken);
@@ -312,11 +216,11 @@ int main(int argc, char* argv[]) {
     printf("Encode Bandwidth: %lf\n", encode_bandwidth);
     printf("Decode Bandwidth: %lf\n", decode_bandwidth);
     */
-    printf("%s,%d,%s,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d,%lf,%lf,%lf\n",
+    printf("%s,%d,%s,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
         data_path, number_threads,error_bound_mode, error_bound,encode_time_taken,
         decode_time_taken, compress_time_taken,
         decompress_time_taken,compression_ratio,
-        encode_bandwidth, decode_bandwidth, number_of_incorrect, max_diff, rmse, psnr);
+        encode_bandwidth, decode_bandwidth);
 
     // Compare first elements of both original and returned data
     // printf("First Element of Original Data: %f\n", DATA[0]);

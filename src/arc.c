@@ -49,9 +49,9 @@ int RS_ID = 4;
 // Resource Variables Section
 // ###########################
 // Resource Folder Location
-char *resource_location = "/users/gfwilki/ARC/src/res/";
+char *resource_location = "/home/gfwilki/ARC/src/res/";
 // Cache Resource Folder Location
-char *cache_resource_location = "/users/gfwilki/ARC/src/res/cache/";
+char *cache_resource_location = "/home/gfwilki/ARC/src/res/cache/";
 // Set configuration information cache string
 char *thread_resource_file = "_information_cache.csv";
 // Hamming & SECDED Resource Variables 
@@ -235,7 +235,8 @@ int arc_resource_init(){
     free(file_location);
 
     // Set INIT to True
-    // printf("ARC Resource Files Initialized\n");
+    if(PRINT)
+        printf("ARC Resource Files Initialized\n");
     INIT = 1;
     return 1;
 }
@@ -248,7 +249,8 @@ int arc_resource_init(){
 // x            -   Success=1, Failure=0
 int arc_init(uint32_t max_threads){
     // Load all the required resources files needed for encoding and decoding
-    // printf("Initializing ARC Resource Files\n");
+    if(PRINT)
+        printf("Initializing ARC Resource Files\n");
     int err = arc_resource_init();
     if(err == 0){
         return 0;
@@ -294,7 +296,8 @@ int arc_init(uint32_t max_threads){
     int current_config_array_index = 0;
 
     // For threads 1 to max_threads, check to see if we have the training data for these already
-    // printf("ARC Training and Loading Process Started\n");
+    if(PRINT)
+        printf("ARC Training and Loading Process Started\n");
     gettimeofday(&total_start, NULL);
     for(i = 1; i <= AVAIL_THREADS; i++){
         // Check resource folder for corresponding num_threads information cache
@@ -304,7 +307,8 @@ int arc_init(uint32_t max_threads){
         char * thread_file_location = concat(cache_resource_location, thread_file_name);
         fp = fopen(thread_file_location, "r");
 
-        // printf("\n%d Thread(s) Training and Loading Started...\n", i);
+        if(PRINT)
+            printf("\n%d Thread(s) Training and Loading Started...\n", i);
         // If the file does not exist,
         if(fp == NULL){
 
@@ -317,7 +321,8 @@ int arc_init(uint32_t max_threads){
                 // Parity Training
                 if(j == PARITY_ID){
                     // Start Training
-                    printf("Parity Training Started...\n");
+                    if(PRINT)
+                        printf("Parity Training Started...\n");
                     gettimeofday(&method_start, NULL);
 
                     // Train 1 parity bits over 1 byte to 128 bytes of data
@@ -349,11 +354,13 @@ int arc_init(uint32_t max_threads){
                     // End Training
                     gettimeofday(&method_stop, NULL);
                     double method_time_taken = (double)(method_stop.tv_usec - method_start.tv_usec) / 1000000 + (double)(method_stop.tv_sec - method_start.tv_sec);
-                    printf("Parity Training Completed in %lf Seconds!\n", method_time_taken);
+                    if(PRINT)
+                        printf("Parity Training Completed in %lf Seconds!\n", method_time_taken);
                 // Hamming Training 
                 } else if(j == HAMMING_ID){  
                     // Start Training
-                    printf("Hamming Training Started...\n");
+                    if(PRINT)
+                        printf("Hamming Training Started...\n");
                     gettimeofday(&method_start, NULL);
 
                     // Train hamming over 1 byte of data
@@ -407,12 +414,14 @@ int arc_init(uint32_t max_threads){
                     // End Training 
                     gettimeofday(&method_stop, NULL);
                     double method_time_taken = (double)(method_stop.tv_usec - method_start.tv_usec) / 1000000 + (double)(method_stop.tv_sec - method_start.tv_sec);
-                    printf("Hamming Training Completed in %lf Seconds!\n", method_time_taken);
+                    if(PRINT)
+                        printf("Hamming Training Completed in %lf Seconds!\n", method_time_taken);
 
                 // SECDED Training
                 } else if(j == SECDED_ID){
                     // Start Training
-                    printf("SECDED Training Started...\n");
+                    if(PRINT)
+                        printf("SECDED Training Started...\n");
                     gettimeofday(&method_start, NULL);
 
                     // Train secded over 1 byte of data
@@ -466,13 +475,16 @@ int arc_init(uint32_t max_threads){
                     // End Training 
                     gettimeofday(&method_stop, NULL);
                     double method_time_taken = (double)(method_stop.tv_usec - method_start.tv_usec) / 1000000 + (double)(method_stop.tv_sec - method_start.tv_sec);
-                    printf("SECDED Training Completed in %lf Seconds!\n", method_time_taken);
+                    if(PRINT)
+                        printf("SECDED Training Completed in %lf Seconds!\n", method_time_taken);
 
                 // RS Training
                 } else if(j == RS_ID){
                     // Start Training
-                    printf("Reed-Solomon Training Started...\n");
-                    printf("(This may take some time)\n");
+                    if(PRINT){
+                        printf("Reed-Solomon Training Started...\n");
+                        printf("(This may take some time)\n");
+                    }
                     gettimeofday(&method_start, NULL);
 
                     // Set initial data and code devices
@@ -604,7 +616,8 @@ int arc_init(uint32_t max_threads){
                     // End Training 
                     gettimeofday(&method_stop, NULL);
                     double method_time_taken = (double)(method_stop.tv_usec - method_start.tv_usec) / 1000000 + (double)(method_stop.tv_sec - method_start.tv_sec);
-                    printf("Reed-Solomon Training Completed in %lf Seconds!\n", method_time_taken);
+                    if(PRINT)
+                        printf("Reed-Solomon Training Completed in %lf Seconds!\n", method_time_taken);
                 }
             }
             // Free strings
@@ -642,16 +655,17 @@ int arc_init(uint32_t max_threads){
                 free(buffer);
             }
         }
-        // printf("%d Thread(s) Training and Loading Completed!\n", i);
+        if(PRINT)
+            printf("%d Thread(s) Training and Loading Completed!\n", i);
     }
     // Return once everything has been loaded
     gettimeofday(&total_stop, NULL);
     double total_time_taken = (double)(total_stop.tv_usec - total_start.tv_usec) / 1000000 + (double)(total_stop.tv_sec - total_start.tv_sec);
-    // printf("ARC Training and Loading Process Finished!\n");
-    // printf("Total Training Time Taken: %lf Seconds\n", total_time_taken);
+    if(PRINT) {
+    printf("ARC Training and Loading Process Finished!\n");
+    printf("Total Training Time Taken: %lf Seconds\n", total_time_taken);
+    }
 
-    // Turn on print outs
-    PRINT = 1;
     // Free allocated simulated data
     free(data);
 
@@ -701,7 +715,8 @@ int arc_close(){
     free(arc_configurations);
     // Set init back to false 
     INIT = 0;
-    printf("ARC successfully closed\n");
+    if(PRINT)
+        printf("ARC successfully closed\n");
     return 1;
 }
 
@@ -771,22 +786,26 @@ int arc_encode(uint8_t* data, uint32_t data_size, double memory_constraint, doub
     // Given the optimizer choice, encode with the correct scheme
     struct timeval start, stop;
     if (optimizer_choice == PARITY_ID){
-        // printf("Utilizing Parity-%" PRIu32 " on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
+        if(PRINT)
+            printf("Utilizing Parity-%" PRIu32 " on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
         gettimeofday(&start, NULL);
         err = arc_parity_encode(data, data_size, optimizer_parameter_a, num_threads, encoded_data, encoded_data_size);
         gettimeofday(&stop, NULL);
     } else if (optimizer_choice == HAMMING_ID){
-        // printf("Utilizing Hamming-%" PRIu32 " on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
+        if(PRINT)
+            printf("Utilizing Hamming-%" PRIu32 " on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
         gettimeofday(&start, NULL);
         err = arc_hamming_encode(data, data_size, optimizer_parameter_a, num_threads, encoded_data, encoded_data_size);
         gettimeofday(&stop, NULL);
     } else if (optimizer_choice == SECDED_ID){
-        // printf("Utilizing SECDED-%"PRIu32" on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
+        if(PRINT)
+            printf("Utilizing SECDED-%"PRIu32" on %" PRIu32 " threads\n", optimizer_parameter_a, num_threads);
         gettimeofday(&start, NULL);
         err = arc_secded_encode(data, data_size, optimizer_parameter_a, num_threads, encoded_data, encoded_data_size);
         gettimeofday(&stop, NULL);
     } else if (optimizer_choice == RS_ID){
-        // printf("Utilizing Reed Solomon-<k=%" PRIu32 ",m=%" PRIu32 ",w=%" PRIu32 "> on %" PRIu32 " threads\n", optimizer_parameter_a, optimizer_parameter_b, 8, num_threads);
+        if(PRINT)
+            printf("Utilizing Reed Solomon-<k=%" PRIu32 ",m=%" PRIu32 ",w=%" PRIu32 "> on %" PRIu32 " threads\n", optimizer_parameter_a, optimizer_parameter_b, 8, num_threads);
         gettimeofday(&start, NULL);
         err = arc_reed_solomon_encode(data, data_size, optimizer_parameter_a, optimizer_parameter_b, num_threads, encoded_data, encoded_data_size);
         gettimeofday(&stop, NULL);
@@ -815,7 +834,8 @@ int arc_encode(uint8_t* data, uint32_t data_size, double memory_constraint, doub
     }
 
     // Return data
-    // printf("ARC Encoding Completed\n");
+    if(PRINT)
+        printf("ARC Encoding Completed\n");
     return 1;
 }
 
@@ -834,7 +854,8 @@ int arc_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t** deco
         printf("Initialization Error: Please initialize ARC before further use\n");
         return 0;
     }
-    //printf("ARC Decoding Started\n");
+    if(PRINT)
+        printf("ARC Decoding Started\n");
 
     // Determine which method was used  
     uint8_t encoding_method = encoded_data[0];
@@ -843,18 +864,22 @@ int arc_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t** deco
     int err;
     // If it was encoded with parity
     if (encoding_method == 0x01){
-        // printf("Parity Encoding Found\n");
+        if(PRINT)
+            printf("Parity Encoding Found\n");
         err = arc_parity_decode(encoded_data, encoded_data_size, decoded_data, decoded_data_size);
     // If it was encoded with hamming
     } else if (encoding_method == 0x02){
-        //printf("Hamming Encoding Found\n");
+        if(PRINT)
+            printf("Hamming Encoding Found\n");
         err = arc_hamming_decode(encoded_data, encoded_data_size, decoded_data, decoded_data_size);
     // If it was encoded with secded
     } else if (encoding_method == 0x03){
-       // printf("SECDED Encoding Found\n");
+        if(PRINT)    
+            printf("SECDED Encoding Found\n");
         err = arc_secded_decode(encoded_data, encoded_data_size, decoded_data, decoded_data_size);
     } else if (encoding_method == 0x04){
-        //printf("Reed Solomon Encoding Found\n");
+        if(PRINT)
+            printf("Reed Solomon Encoding Found\n");
         err = arc_reed_solomon_decode(encoded_data, encoded_data_size, decoded_data, decoded_data_size);
     } else {
         printf("INVALID ENCODING METHOD: No valid encoding method found to decode this data. . .\n");
@@ -862,7 +887,8 @@ int arc_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t** deco
     }
 
     // Return data
-    // printf("ARC Decoding Completed\n");
+    if(PRINT)
+        printf("ARC Decoding Completed\n");
     return err;
 }
 
@@ -1412,7 +1438,7 @@ int arc_parity_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, ui
         return 0;
     }
     if (PRINT){
-        // printf("Starting Parity Encoding\n");
+        printf("Starting Parity Encoding\n");
     }
     // Determine number of blocks given data_size and block_size
     uint32_t block_count = (uint32_t)ceil((float)data_size / (float)block_size);
@@ -1557,7 +1583,7 @@ int arc_parity_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, ui
         }
     }
     if (PRINT){
-        // printf("Parity Encoding Finished!\n");
+        printf("Parity Encoding Finished!\n");
     }
     // Return resulting array
     return 1;
@@ -1578,7 +1604,7 @@ int arc_parity_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
         return 0;
     }
     if (PRINT){
-        //printf("Starting Parity Decoding\n");
+        printf("Starting Parity Decoding\n");
     }
     // Pull metadata from encoded_data array
     uint32_t metadata_length = 17;
@@ -1709,7 +1735,8 @@ int arc_parity_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
             }
         } else {
             // If parity is incorrect, print error and exit
-            printf("DATA INTEGRITY ERROR: Single Bit Parity Error Found. . .\n");
+            if(PRINT)
+                printf("DATA INTEGRITY ERROR: Single Bit Parity Error Found. . .\n");
             #pragma omp critical 
             {
                 decode_success = 0;
@@ -1726,7 +1753,7 @@ int arc_parity_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
         }
     } else{
         if (PRINT){
-            //printf("Parity Decoding Finished!\n");
+            printf("Parity Decoding Finished!\n");
         }
     }
     // Return resulting array and decode success value
@@ -1825,7 +1852,7 @@ int arc_hamming_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, u
         return 0;
     }
     if (PRINT){
-        //printf("Starting Hamming Encoding\n");
+        printf("Starting Hamming Encoding\n");
     }
     // Check that block_size is valid and supported
     if (block_size != 1 && block_size != 8){
@@ -1947,7 +1974,7 @@ int arc_hamming_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, u
     
     // Return resulting array
     if (PRINT){
-        //printf("Hamming Encoding Finished\n");
+        printf("Hamming Encoding Finished\n");
     }
     return 1;
 }
@@ -1967,7 +1994,7 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
         return 0;
     }
     if (PRINT){
-        // printf("Starting Hamming Decoding\n");
+        printf("Starting Hamming Decoding\n");
     }
     // Set metadata length
     uint32_t metadata_length = 17;
@@ -2068,7 +2095,8 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
                    current_data_index++;
                }
             } else {
-                printf("Incorrect Parity Found...\nAttempting to Fix Now...\n");
+                if(PRINT)
+                    printf("Incorrect Parity Found...\nAttempting to Fix Now...\n");
                 // Using xor_parity value attempt to fix data and parity
                 int j;
                 for (j = 0; j < 72; j++){
@@ -2086,7 +2114,8 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
                 // Recalculate Hamming on "fixed" data and parity
                 xor_parity = original_block_parity ^ block_parity;
                 if (xor_parity == 0){
-                    printf("Data Corrected!\n");
+                    if(PRINT)
+                        printf("Data Corrected!\n");
                     (*data)[current_data_index] = (uint8_t)((block_8 & 0xFF00000000000000) >> 56);
                     current_data_index++;
                     (*data)[current_data_index] = (uint8_t)((block_8 & 0x00FF000000000000) >> 48);
@@ -2127,7 +2156,8 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
                (*data)[current_data_index] = encoded_data[block_data_start];
                current_data_index++;
             } else {
-                printf("Incorrect Parity Found...\nAttempting to Fix Now...\n");
+                if(PRINT)
+                    printf("Incorrect Parity Found...\nAttempting to Fix Now...\n");
                 // Using xor_parity value attempt to fix data and parity
                 int j;
                 for (j = 0; j < 16; j++){
@@ -2145,7 +2175,8 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
                 // Recalculate Hamming on "fixed" data and parity
                 xor_parity = original_block_parity ^ block_parity;
                 if (xor_parity == 0){
-                    printf("Data Corrected!\n");
+                    if(PRINT)
+                        printf("Data Corrected!\n");
                     (*data)[current_data_index] = block_1;
                     current_data_index++;
                 } else {
@@ -2163,12 +2194,11 @@ int arc_hamming_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_
     if (decode_success == 0){
         free(*data);
         *data_size = 0;
-        if (PRINT){
-            printf("Hamming Decoding Failed!\n");
-        }
+        printf("Hamming Decoding Failed!\n");
+    
     } else{
         if (PRINT){
-            //printf("Hamming Decoding Finished!\n");
+            printf("Hamming Decoding Finished!\n");
         }
     }
     // Return resulting array and decode success value
@@ -2284,7 +2314,7 @@ int arc_secded_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, ui
         return 0;
     }
     if (PRINT){
-        // printf("Starting SECDED Encoding\n");
+        printf("Starting SECDED Encoding\n");
     }
 
     // Check that block_size is valid and supported
@@ -2407,7 +2437,7 @@ int arc_secded_encode(uint8_t* data, uint32_t data_size, uint32_t block_size, ui
     
     // Return resulting array
     if (PRINT){
-        //printf("SECDED Encoding Finished\n");
+        printf("SECDED Encoding Finished\n");
     }
     return 1;
 }
@@ -2427,7 +2457,7 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
         return 0;
     }
     if (PRINT){
-        //printf("Starting SECDED Decoding\n");
+        printf("Starting SECDED Decoding\n");
     }
     // Set metadata length
     uint32_t metadata_length = 17;
@@ -2533,7 +2563,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                    current_data_index++;
                }
             } else {
-                printf("Incorrect Parity Found...\nChecking for Double Bit Errors...\n");
+                if(PRINT)
+                    printf("Incorrect Parity Found...\nChecking for Double Bit Errors...\n");
                 // With syndrome being non-zero, check parity to see if double bit error occured
                 // Grab current secded parity bit
                 secded_parity_bit = ((original_block_parity & 0b10000000) >> 7);
@@ -2557,7 +2588,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                     }
                 // If parity is not the same then a single bit error can be attempted to be fixed
                 } else {
-                    printf("Double Bit Error Not Found...\nAttempting to Fix...\n");
+                    if(PRINT)    
+                        printf("Double Bit Error Not Found...\nAttempting to Fix...\n");
                     // Using xor_parity value attempt to fix data and parity
                     int j;
                     for (j = 0; j < 72; j++){
@@ -2575,7 +2607,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                     // Recalculate secded on "fixed" data and parity
                     xor_parity = original_block_parity ^ block_parity;
                     if (xor_parity == 0){
-                        printf("Data Corrected!\n");
+                        if(PRINT)
+                            printf("Data Corrected!\n");
                         (*data)[current_data_index] = (uint8_t)((block_8 & 0xFF00000000000000) >> 56);
                         current_data_index++;
                         (*data)[current_data_index] = (uint8_t)((block_8 & 0x00FF000000000000) >> 48);
@@ -2617,7 +2650,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                (*data)[current_data_index] = encoded_data[block_data_start];
                current_data_index++;
             } else {
-                printf("Incorrect Parity Found...\nChecking for Double Bit Errors...\n");
+                if(PRINT)
+                    printf("Incorrect Parity Found...\nChecking for Double Bit Errors...\n");
                 // With syndrome being non-zero, check parity to see if double bit error occured
                 // Grab current secded parity bit
                 secded_parity_bit = ((original_block_parity & 0b00010000) >> 4);
@@ -2641,7 +2675,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                     }
                 // If parity is not the same then a single bit error can be attempted to be fixed
                 } else {
-                    printf("Double Bit Error Not Found...\nAttempting to Fix...\n");
+                    if(PRINT)
+                        printf("Double Bit Error Not Found...\nAttempting to Fix...\n");
                     // Using xor_parity value attempt to fix data and parity
                     int j;
                     for (j = 0; j < 16; j++){
@@ -2659,7 +2694,8 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
                     // Recalculate secded on "fixed" data and parity
                     xor_parity = original_block_parity ^ block_parity;
                     if (xor_parity == 0){
-                        printf("Data Corrected!\n");
+                        if(PRINT)
+                            printf("Data Corrected!\n");
                         (*data)[current_data_index] = block_1;
                         current_data_index++;
                     } else {
@@ -2678,12 +2714,10 @@ int arc_secded_decode(uint8_t* encoded_data, uint32_t encoded_data_size, uint8_t
     if (decode_success == 0){
         free(*data);
         *data_size = 0;
-        if (PRINT){
-            printf("SECDED Decoding Failed!\n");
-        }
+            printf("SECDED Decoding Failed!\n");  
     } else{
         if (PRINT){
-            //printf("SECDED Decoding Finished!\n");
+            printf("SECDED Decoding Finished!\n");
         }
     }
     // Return resulting array and decode success value
@@ -2710,7 +2744,7 @@ int arc_reed_solomon_encode(uint8_t* data, uint32_t data_size, uint32_t data_dev
         return 0;
     }
     if (PRINT){
-        //printf("Starting Reed Solomon Encoding\n");
+        printf("Starting Reed Solomon Encoding\n");
     }
     // Set metadata length 
     uint32_t metadata_length = 25;
@@ -2953,7 +2987,7 @@ int arc_reed_solomon_decode(uint8_t* encoded_data, uint32_t encoded_data_size, u
         return 0;
     }
     if (PRINT){
-        //printf("Starting Reed Solomon Decoding\n");
+        printf("Starting Reed Solomon Decoding\n");
     }
     // Set metadata length
     uint32_t metadata_length = 25;
@@ -3121,7 +3155,8 @@ int arc_reed_solomon_decode(uint8_t* encoded_data, uint32_t encoded_data_size, u
                 }
             // If parity was incorrect for any items in the block, then erase faulty devices, decode with jerasure, and write fixed data out
             } else {
-                printf("Incorrect Parity Found. . .\nFixing Now\n");
+                if(PRINT)
+                    printf("Incorrect Parity Found. . .\nFixing Now\n");
                 // Reset data index to beginning of block and devices processed to 0
                 current_block_encoded_data_index = current_block_encoded_data_start;
                 current_devices_processed = 0;
@@ -3264,12 +3299,10 @@ int arc_reed_solomon_decode(uint8_t* encoded_data, uint32_t encoded_data_size, u
     if (decode_success == 0){
         free(*data);
         *data_size = 0;
-        if (PRINT){
-            printf("Reed Solomon Decoding Failed!\n");
-        }
+        printf("Reed Solomon Decoding Failed!\n");
     } else{
         if (PRINT){
-            //printf("Reed Solomon Decoding Finished!\n");
+            printf("Reed Solomon Decoding Finished!\n");
         }
     }
     // Return resulting array and decode success value

@@ -1,0 +1,14 @@
+#PBS -N omp_test_arc_bandwidth
+#PBS -l select=1:ncpus=40:mem=370gb:interconnect=hdr,walltime=72:00:00 -q fthpc
+
+module add python/3.10.3-gcc gcc/9.3.0
+cd /home/gfwilki/ARC/
+rm ./src/res/cache/*.csv
+cd ./test/
+make clean
+make
+./arc_test
+cd ../examples
+python arc_example.py > arc_example
+chmod +x arc_example
+sh arc_example
